@@ -56,6 +56,17 @@ def save_config(config: dict):
         pass
 
 
+
+def reset_input_state():
+    """新しいテキストを取り込む際に、前の状態をすべてクリアする。"""
+    st.session_state.input_text = ""
+    st.session_state.input_title = ""
+    st.session_state.mp3_data = None
+    st.session_state.mp3_filename = None
+    # text_versionをインクリメントして、編集エリアのキーを変える
+    st.session_state.text_version += 1
+
+
 def sanitize_filename(s: str) -> str:
     s = re.sub(r'[\\/*?:"<>|]', '', s)
     s = s.strip()[:60]
@@ -86,6 +97,8 @@ if 'mp3_data' not in st.session_state:
     st.session_state.mp3_data = None
 if 'mp3_filename' not in st.session_state:
     st.session_state.mp3_filename = None
+if 'text_version' not in st.session_state:
+    st.session_state.text_version = 0
 
 
 # ══════════════════════════════════════════
@@ -297,9 +310,11 @@ with tab_paste:
     )
     if st.button("📋 テキストを取り込む", key="paste_btn"):
         if pasted.strip():
+            reset_input_state()
             st.session_state.input_text = pasted
             st.session_state.input_title = paste_title or ""
             st.success(f"✅ {len(pasted)}文字を取り込みました")
+            st.rerun()
         else:
             st.warning("テキストが空です")
 
@@ -313,9 +328,11 @@ with tab_file:
         if st.button("📁 ファイルを取り込む", key="file_btn"):
             try:
                 title, text = extract_from_file(uploaded)
+                reset_input_state()
                 st.session_state.input_text = text
                 st.session_state.input_title = title
                 st.success(f"✅ {len(text)}文字を取り込みました（{title}）")
+                st.rerun()
             except Exception as e:
                 st.error(f"❌ ファイル読み込みエラー: {e}")
 
@@ -330,9 +347,11 @@ with tab_url:
             with st.spinner("URLから本文を抽出中..."):
                 try:
                     title, text = extract_from_url(url)
+                    reset_input_state()
                     st.session_state.input_text = text
                     st.session_state.input_title = title
                     st.success(f"✅ {len(text)}文字を取り込みました（{title}）")
+                    st.rerun()
                 except Exception as e:
                     st.error(f"❌ {e}")
         else:
@@ -362,12 +381,11 @@ if st.session_state.input_text:
             "本文",
             value=st.session_state.input_text,
             height=400,
-            key="edit_area",
+            key=f"edit_area_v{st.session_state.text_version}",
             label_visibility="collapsed",
         )
         if edited_text != st.session_state.input_text:
             st.session_state.input_text = edited_text
-            st.info("テキストが編集されました")
 
     st.divider()
     st.header("🎙 音声変換")
