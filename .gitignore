@@ -1,0 +1,28 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# 設定・認証情報（絶対にコミットしない）
+config.json
+*-key.json
+.env
+.env.*
+*.credentials.json
+
+# macOS
+.DS_Store
+._*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 出力
+*.mp3
+output/
