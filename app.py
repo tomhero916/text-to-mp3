@@ -25,7 +25,7 @@ from tts_providers import (
     GOOGLE_VOICES_EN,
     convert_text_to_mp3,
 )
-from text_extractors import extract_from_url, extract_from_file
+from text_extractors import extract_from_url, extract_from_file, extract_from_pdf
 
 
 # ══════════════════════════════════════════
@@ -321,13 +321,17 @@ with tab_paste:
 with tab_file:
     uploaded = st.file_uploader(
         "テキストファイルをアップロード",
-        type=["txt", "md"],
-        help="UTF-8、Shift_JIS、EUC-JP に対応",
+        type=["txt", "md", "pdf"],
+        help="対応形式: テキスト(UTF-8/Shift_JIS/EUC-JP)、Markdown、PDF",
     )
     if uploaded is not None:
         if st.button("📁 ファイルを取り込む", key="file_btn"):
             try:
-                title, text = extract_from_file(uploaded)
+                # 拡張子で処理を分岐
+                if uploaded.name.lower().endswith(".pdf"):
+                    title, text = extract_from_pdf(uploaded)
+                else:
+                    title, text = extract_from_file(uploaded)
                 reset_input_state()
                 st.session_state.input_text = text
                 st.session_state.input_title = title

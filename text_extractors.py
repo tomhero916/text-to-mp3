@@ -79,3 +79,58 @@ def extract_from_file(uploaded_file) -> tuple:
     # 全部失敗したらerrors='replace'でUTF-8として読む
     text = raw_bytes.decode('utf-8', errors='replace')
     return base_name, text
+
+def extract_from_pdf(uploaded_file) -> tuple:
+    """
+    アップロードされたPDFファイルからテキストを抽出する。
+
+    Args:
+        uploaded_file: Streamlitのアップロードファイルオブジェクト
+
+    Returns:
+        (ファイル名（拡張子なし）, 本文) のタプル
+    """
+    try:
+        import pypdf
+    except ImportError:
+        raise RuntimeError(
+            "pypdf が未インストールです。"
+            "pip install pypdf を実行してください。"
+        )
+
+    import io
+    import os
+
+    name = uploaded_file.name
+    base_name = os.path.splitext(name)[0]
+
+    raw_bytes = uploaded_file.read()
+    pdf_stream = io.BytesIO(raw_bytes)
+
+    try:
+        reader = pypdf.PdfReader(pdf_stream)
+    except Exception as e:
+        raise RuntimeError(f"PDFの読み込みに失敗しました: {e}")
+
+    if len(reader.pages) == 0:
+        raise RuntimeError("PDFにページが含まれていません")
+
+    # 全ページのテキストを抽出して結合
+    pages_text = []
+    for i, page in enumerate(reader.pages):
+        try:
+            text = page.extract_text()
+            if text:
+                pages_text.append(text)
+        except Exception:
+            # 1ページだけ失敗しても続行
+            continue
+
+    if not pages_text:
+        raise RuntimeError(
+            "PDFからテキストを抽出できませんでした。"
+            "スキャンされた画像PDFの可能性があります（OCR未対応）。"
+        )
+
+    full_text = "\n\n".join(pages_text)
+    return base_name, full_text
