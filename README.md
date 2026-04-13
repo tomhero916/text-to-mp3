@@ -129,19 +129,30 @@ text-to-mp3/
 ## 🎧 音声サンプル
 
 夏目漱石「吾輩は猫である」冒頭を、4つの設定で音声化したサンプルです。
-各リンクをクリックすると、GitHub上で直接再生できます。
 
 **サンプルテキスト**: [sample-wagahai.txt](samples/sample-wagahai.txt)
 
-| プロバイダー | モデル | 音声ファイル |
-|---|---|---|
-| Google Cloud | Chirp 3 HD (Autonoe) | [google-cloud.mp3](samples/google-cloud.mp3) |
-| OpenAI | gpt-4o-mini-tts (nova) | [openai_gpt-4o-mini-tts.mp3](samples/openai_gpt-4o-mini-tts.mp3) |
-| OpenAI | tts-1-hd (nova) | [openai_tts-1-hd.mp3](samples/openai_tts-1-hd.mp3) |
-| OpenAI | tts-1 (nova) | [openai_tts-1.mp3](samples/openai_tts-1.mp3) |
+### Google Cloud Chirp 3 HD (Autonoe)
 
-**音質の比較**:
+https://github.com/user-attachments/files/26688760/google-cloud.mp3
+
+### OpenAI gpt-4o-mini-tts (nova)
+
+https://github.com/user-attachments/files/26688762/openai_gpt-4o-mini-tts.mp3
+
+### OpenAI tts-1-hd (nova)
+
+https://github.com/user-attachments/files/26688759/openai_tts-1-hd.mp3
+
+### OpenAI tts-1 (nova)
+
+https://github.com/user-attachments/files/26688761/openai_tts-1.mp3
+
+### 音質の比較
+
 日本語の自然さでは **Google Cloud Chirp 3 HD** が最も優れており、続いて OpenAI の新モデル `gpt-4o-mini-tts` が健闘します。`tts-1` / `tts-1-hd` は英語向けに最適化されているため、日本語では若干の訛りが感じられます。
+
+ダウンロード用ミラー: [samples フォルダ](samples/)
 
 
 ## システム要件
