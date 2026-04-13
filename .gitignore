@@ -23,6 +23,7 @@ config.json
 .idea/
 *.swp
 
-# 出力
+# 出力（ただしsamples/配下は除外）
 *.mp3
+!samples/*.mp3
 output/
