@@ -108,6 +108,42 @@ text-to-mp3/
 
 ---
 
+---
+
+## 📸 スクリーンショット
+
+### OpenAI 選択時
+![OpenAI Overview](samples/open-ai-overview.png)
+
+### Google Cloud 選択時
+![Google Cloud Overview](samples/google-cloud-overview.png)
+
+### 変換中
+![Conversion Process](samples/conversion-process.png)
+
+### 結果画面
+![Result](samples/result.png)
+
+---
+
+## 🎧 音声サンプル
+
+夏目漱石「吾輩は猫である」冒頭を、4つの設定で音声化したサンプルです。
+各リンクをクリックすると、GitHub上で直接再生できます。
+
+**サンプルテキスト**: [sample-wagahai.txt](samples/sample-wagahai.txt)
+
+| プロバイダー | モデル | 音声ファイル |
+|---|---|---|
+| Google Cloud | Chirp 3 HD (Autonoe) | [google-cloud.mp3](samples/google-cloud.mp3) |
+| OpenAI | gpt-4o-mini-tts (nova) | [openai_gpt-4o-mini-tts.mp3](samples/openai_gpt-4o-mini-tts.mp3) |
+| OpenAI | tts-1-hd (nova) | [openai_tts-1-hd.mp3](samples/openai_tts-1-hd.mp3) |
+| OpenAI | tts-1 (nova) | [openai_tts-1.mp3](samples/openai_tts-1.mp3) |
+
+**音質の比較**:
+日本語の自然さでは **Google Cloud Chirp 3 HD** が最も優れており、続いて OpenAI の新モデル `gpt-4o-mini-tts` が健闘します。`tts-1` / `tts-1-hd` は英語向けに最適化されているため、日本語では若干の訛りが感じられます。
+
+
 ## システム要件
 
 - macOS / Windows / Linux
