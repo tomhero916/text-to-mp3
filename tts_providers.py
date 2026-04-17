@@ -169,7 +169,63 @@ def prepare_for_tts(text: str, max_sentence_len: int = 100) -> str:
             rebuilt += current.rstrip(chr(0x3001))
         result.append(rebuilt)
 
-    return ''.join(result)
+    final_text = ''.join(result)
+
+    # 最終安全策: 句点間がまだ max_sentence_len を超える区間を強制分割
+    # （読点のない英語タイトル連結などの対策）
+    return _apply_final_safety(final_text, max_sentence_len)
+
+
+def _apply_final_safety(text: str, max_sentence_len: int) -> str:
+    """
+    句点で区切られた各文がmax_sentence_lenを超えている場合、
+    スペース→文字数の優先順位で強制分割して句点を挿入する。
+    """
+    parts = re.split('(' + chr(0x3002) + ')', text)
+    output = []
+    for part in parts:
+        if part == chr(0x3002):
+            output.append(part)
+            continue
+        if len(part) <= max_sentence_len:
+            output.append(part)
+            continue
+        output.append(_force_break_long(part, max_sentence_len))
+    return ''.join(output)
+
+
+def _force_break_long(text: str, max_len: int) -> str:
+    """
+    長文を強制分割する。スペースがあればスペースで、
+    なければ文字数で切り、各セグメント間に句点を挿入する。
+    """
+    if ' ' in text:
+        words = text.split(' ')
+        segments = []
+        current = ''
+        for w in words:
+            candidate = (current + ' ' + w) if current else w
+            if len(candidate) <= max_len:
+                current = candidate
+            else:
+                if current:
+                    segments.append(current)
+                current = w
+        if current:
+            segments.append(current)
+        final = []
+        for seg in segments:
+            if len(seg) > max_len:
+                final.extend(_char_split(seg, max_len))
+            else:
+                final.append(seg)
+        return chr(0x3002).join(final)
+    return chr(0x3002).join(_char_split(text, max_len))
+
+
+def _char_split(text: str, max_len: int) -> list:
+    """文字数で強制分割する最終手段。"""
+    return [text[i:i + max_len] for i in range(0, len(text), max_len)]
 
 
 # ══════════════════════════════════════════
@@ -342,35 +398,69 @@ def convert_text_to_mp3(
     combined = AudioSegment.empty()
     silence = AudioSegment.silent(duration=chunk_silence_ms)
 
+    # Google Cloud TTS 用: 文長制限エラー時に段階的に下げて自動リトライ
+    sentence_len_candidates = [max_sentence_len, 80, 60, 40]
+    # 重複を除去しつつ順序を維持
+    seen = set()
+    sentence_len_candidates = [
+        x for x in sentence_len_candidates
+        if x not in seen and not seen.add(x)
+    ]
+
     for i, chunk in enumerate(chunks, start=1):
-        prepared = prepare_for_tts(chunk, max_sentence_len=max_sentence_len)
+        original_chunk = chunk
 
         if progress_callback:
             progress_callback(
                 i, total,
-                f"チャンク {i}/{total} を変換中 ({len(prepared)}文字)"
+                f"チャンク {i}/{total} を変換中 ({len(chunk)}文字)"
             )
 
         mp3_bytes = None
         last_error = None
-        for attempt in range(3):
-            try:
-                mp3_bytes = provider.synthesize_chunk(prepared)
+
+        # Google Cloud TTS の場合: 文長制限を段階的に下げてリトライ
+        # OpenAI の場合: max_sentence_len のみで処理（文長制限なし）
+        is_google = isinstance(provider, GoogleCloudTTS)
+        candidates = sentence_len_candidates if is_google else [max_sentence_len]
+
+        for sl_idx, sl in enumerate(candidates):
+            prepared = prepare_for_tts(original_chunk, max_sentence_len=sl)
+
+            if sl_idx > 0 and progress_callback:
+                progress_callback(
+                    i, total,
+                    f"チャンク {i}/{total}: 文長制限を {sl} 文字に下げて再試行..."
+                )
+
+            # サーバーエラー用のリトライ（指数バックオフ）
+            text_error_occurred = False
+            for attempt in range(3):
+                try:
+                    mp3_bytes = provider.synthesize_chunk(prepared)
+                    break
+                except Exception as e:
+                    last_error = e
+                    error_str = str(e).lower()
+                    if '400' in error_str or 'invalid' in error_str:
+                        text_error_occurred = True
+                        break
+                    if attempt < 2:
+                        wait = 2 ** (attempt + 1)
+                        time.sleep(wait)
+
+            if mp3_bytes is not None:
                 break
-            except Exception as e:
-                last_error = e
-                error_str = str(e).lower()
-                if '400' in error_str or 'invalid' in error_str:
-                    raise RuntimeError(
-                        f"チャンク{i}でテキストエラー: {e}\n"
-                        f"チャンク先頭: 「{prepared[:80]}...」"
-                    )
-                if attempt < 2:
-                    wait = 2 ** (attempt + 1)
-                    time.sleep(wait)
+
+            if not text_error_occurred:
+                break
 
         if mp3_bytes is None:
-            raise RuntimeError(f"チャンク{i}の変換に3回失敗: {last_error}")
+            raise RuntimeError(
+                f"チャンク{i}の変換に失敗しました\n"
+                f"エラー: {last_error}\n"
+                f"チャンク先頭: 「{original_chunk[:80]}...」"
+            )
 
         segment = AudioSegment.from_file(io.BytesIO(mp3_bytes), format='mp3')
         if i > 1:

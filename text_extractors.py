@@ -80,6 +80,7 @@ def extract_from_file(uploaded_file) -> tuple:
     text = raw_bytes.decode('utf-8', errors='replace')
     return base_name, text
 
+
 def extract_from_pdf(uploaded_file) -> tuple:
     """
     アップロードされたPDFファイルからテキストを抽出する。
@@ -115,7 +116,6 @@ def extract_from_pdf(uploaded_file) -> tuple:
     if len(reader.pages) == 0:
         raise RuntimeError("PDFにページが含まれていません")
 
-    # 全ページのテキストを抽出して結合
     pages_text = []
     for i, page in enumerate(reader.pages):
         try:
@@ -123,7 +123,6 @@ def extract_from_pdf(uploaded_file) -> tuple:
             if text:
                 pages_text.append(text)
         except Exception:
-            # 1ページだけ失敗しても続行
             continue
 
     if not pages_text:
