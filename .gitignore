@@ -27,3 +27,5 @@ config.json
 *.mp3
 !samples/*.mp3
 output/
+
+launch.command

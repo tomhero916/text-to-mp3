@@ -87,7 +87,6 @@ text-to-mp3/
 ├── tts_providers.py    # OpenAI/Google両対応のTTSロジック
 ├── text_extractors.py  # URL本文抽出・ファイル読み込み
 ├── requirements.txt    # 依存ライブラリ
-├── start.command       # macOS用ワンクリック起動スクリプト
 ├── icon.png            # アプリアイコン
 ├── README.md           # このファイル
 ├── SETUP.md            # 詳細セットアップガイド
